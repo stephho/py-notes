@@ -52,6 +52,10 @@ class note:
         """
         Creates a note, given its contents
 
+        Upon intitialization, the note will be parsed into its frontmatter and
+        its body. If the note has no frontmatter, empty frontmatter (two lines
+        of frontmatter markers with no lines in between) will be added
+
         Arguments:
             contents: The entire contents of a note, comprised of the 
                 frontmatter and the body. Each string in the list is a line in 
@@ -69,3 +73,33 @@ class note:
         self.properties = {}
         self.body = []
         self.h1 = ''
+
+        # parse the note contents into frontmatter and body
+        # check if the note has frontmatter
+        if self.contents[0] == self.frontmatter_marker:
+            # everything in between the first --- and second --- is frontmatter
+            self.frontmatter_end = self.contents[1:].index(self.frontmatter_marker) + 1
+            self.frontmatter = self.contents[self.frontmatter_start:self.frontmatter_end + 1]
+
+            # there should be no empty lines in the frontmatter
+            for line in self.frontmatter: 
+                if len(line.strip()) == 0: 
+                    self.frontmatter.remove(line)
+        
+        else:
+            # there is no frontmatter in the note, add empty frontmatter
+            self.contents = self.frontmatter + self.contents
+
+        # the rest of the note contents after the frontmatter is the body
+        self.body = self.contents[self.frontmatter_end + 1:]
+
+        # there should be no empty lines in between the frontmatter and the body
+        for line in self.body: 
+            if len(line.strip()) == 0:
+                self.body.remove(line)
+            else:
+                break
+
+        # update attributes to account for removal of empty lines
+        self.contents = self.frontmatter + self.body
+        self.frontmatter_end = len(self.frontmatter) - 1
