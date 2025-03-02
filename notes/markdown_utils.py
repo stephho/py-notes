@@ -37,7 +37,7 @@ def format_property_list_item(item: str, is_tags: bool=False) -> str:
         - If the item is an internal link, it is wrapped in double quotes,
           `'  - "[[item]]"\\n'`
         - If the item is a tag, it is formatted with a hashtag wrapped in 
-          double quotes and is changed to kebab case, `'\\n  - "#item"'`
+          double quotes and is changed to kebab case, `'  - "#item"\\n'`
 
     Example:
         - `In progress` (a tag) --> `'  - "#in-progress"\\n'`
@@ -89,3 +89,31 @@ def format_property_list(prop_value: list[str], is_tags: bool=False) -> list[str
     
     return formatted_prop_value
 
+
+def write_frontmatter(prop_name: str, prop_value: str | list[str]): 
+    """
+    Write a property and its value to lines of frontmatter in YAML notation
+    
+    Arguments:
+        prop_name: Name of the property. Should be in kebab case
+        prop_value: Value of the property. If str, the value is a single line; 
+            if list, the value is multiple lines. Should be in YAML format
+
+    Returns:
+        A list of strings, where each string is a line of frontmatter
+
+    Example:
+        ```
+        ['date-created: 2025-03-01\n']
+        ['media:\n', '  - "[[Survivor US]]"\n', '  - "[[Survivor US S48]]"\n']
+        ```
+    """
+    prop_single_line = '{prop_name}: {prop_value}\n'
+    prop_multi_line = '{prop_name}:\n'
+
+    if type(prop_value) == list: 
+        frontmatter_lines = [prop_multi_line.format(prop_name=prop_name)] + prop_value
+    else:
+        frontmatter_lines = [prop_single_line.format(prop_name=prop_name, prop_value=prop_value)]
+    
+    return frontmatter_lines
