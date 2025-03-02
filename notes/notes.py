@@ -1,3 +1,5 @@
+from . import markdown_utils
+
 class note:
     """
     A note in markdown
@@ -19,7 +21,7 @@ class note:
             found in the note's frontmatter. The keys of `properties` are the 
             property names, in kebab case. The values are dicts with the
             following keys:
-                value (str or list[str]): The value of the property. Multi-line
+                value (str | list[str]): The value of the property. Multi-line
                     property values are lists
                 order (int): The order in which the property appears in the
                     frontmatter, starting from `1`
@@ -31,7 +33,7 @@ class note:
             Example:
             ```
             properties = { 
-                'date-created' { 
+                'date-created': { 
                     'value': '2024-09-01',
                     'order': 2,
                     'index': 3
@@ -101,5 +103,118 @@ class note:
                 break
 
         # update attributes to account for removal of empty lines
+        self.contents = self.frontmatter + self.body
+        self.frontmatter_end = len(self.frontmatter) - 1
+
+
+    def parse_properties(self):
+        """
+        Parse the lines in the frontmatter into a dictionary of properties
+
+        Modifies attributes:
+            properties (dict[str, dict[str, any]]): Keys are property names, in
+                kebab case. The values are dicts with the following keys
+                    value (str | list[str]): The value of the property. Multi-
+                        line property values are lists
+                    order (int): The order in which the property appears in the
+                        frontmatter, starting from `1`
+                    index (int): The index of the first line of the property in
+                        the frontmatter. The first property in the frontmatter 
+                        always has an index of 1, because index `0` is always 
+                        the frontmatter marker
+            frontmatter (list[str]): In the process of parsing properties, they 
+                may be reformatted, affecting frontmatter
+            frontmatter_end (int): If frontmatter is reformatted, the index of 
+                where it ends may also be affected
+            contents (list[str]): If frontmatter is reformatted, it is updated 
+                in `contents` too
+        
+        Example:
+            ```
+            properties = { 
+                'date-created': { 
+                    'value': '2024-09-01',
+                    'order': 2,
+                    'index': 3
+                }, 
+                'tags': { 
+                    'value': ['  - "#movie"\n', '  - "#status/in-progress"\n']
+                    'order': 3
+                    'index': 4
+                }
+            }
+            ```
+        """
+        # first, get all the property keys and their indices in the frontmatter
+        props = {}
+        n = 0
+        for line in self.frontmatter: 
+            if line == self.frontmatter_marker: 
+                pass 
+            elif line[0] != ' ' and ':' in line:
+                # this line has a property key
+                # assumes there are no other ':' in the property name or value
+                n += 1 # order of property
+                i = self.frontmatter.index(line) # index of property
+                prop_name = line.split(':')[0]
+                props[n] = (i, prop_name)
+            else: 
+                continue
+        
+        # then, get the property values for each property key
+        for n in props:
+            i = props[n][0]
+            prop_name = props[n][1]
+
+            # get the index of the next property, in order
+            # the property values are the lines in between the two indices
+            try: 
+                i2 = props[n+1][0]
+            except KeyError: 
+                # this is the last property
+                i2 = -1
+            
+            prop_value = ''
+            prop_value_lines = self.frontmatter[i+1:i2]
+
+            if len(prop_value_lines) == 0: 
+                # then the property value is in the same line as the property name
+                try: 
+                    prop_line = self.frontmatter[i]
+                    prop_value = prop_line.lstrip('{}:'.format(prop_name)).strip()
+                except IndexError: 
+                    # the property has no value 
+                    pass
+            
+            else: 
+                # if property value is more than one item, it should be 
+                # properly formatted as a YAML list
+                if prop_name.lower().strip() == 'tags': 
+                    is_tags = True 
+                else: 
+                    is_tags = False
+                
+                prop_value = markdown_utils.format_property_list(
+                    prop_value=prop_value_lines, 
+                    is_tags=is_tags)
+
+            new_prop_name = markdown_utils.format_kebab_case(prop_name)
+
+            self.properties[new_prop_name] = {
+                'value': prop_value, 
+                'order': n, 
+                'index': i
+            }
+            
+            # in case the property name and values have been reformatted, 
+            # rewrite them to frontmatter
+            new_prop_value_lines = markdown_utils.write_frontmatter(
+                prop_name=new_prop_name, 
+                prop_value=prop_value)
+            self.frontmatter = (self.frontmatter[:i] + new_prop_value_lines 
+                + self.frontmatter[i2:])
+        
+        # finally, we got all the properties 
+        # update attributes to account for reformatted frontmatter
         self.contents = self.frontmatter + self.body
         self.frontmatter_end = len(self.frontmatter) - 1
