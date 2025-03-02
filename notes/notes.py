@@ -1,3 +1,4 @@
+import math
 from . import markdown_utils
 
 class note:
@@ -218,3 +219,63 @@ class note:
         # update attributes to account for reformatted frontmatter
         self.contents = self.frontmatter + self.body
         self.frontmatter_end = len(self.frontmatter) - 1
+
+
+    def change_list_indent(self, orig_indent: int=2):
+        """
+        Change the number of spaces used in list indentation in the note's body
+
+        Note: The number of spaces to convert to is determined by the class 
+        attribute `indentation` (default: `4`). This method does not affect 
+        lists in frontmatter, which always use 2 spaces indentation
+
+        Arguments:
+            orig_indent (int): The number of spaces used in one level of 
+                indentation in the original note's body
+
+        Modifies attributes:
+            body (list[str])
+            content (list[str])
+        """
+        updated_lines = []
+
+        if orig_indent == self.indentation: 
+            print('no change in identation needed, aborting')
+            return 
+
+        for l in self.body:
+
+            if l.startswith('{} '.format(self.list_marker)): 
+                # this line is a 1st level list item, i.e. not indented
+                updated_lines.append(l)
+
+            elif l.strip().startswith('{} '.format(self.list_marker)): 
+                # this line is a list item
+                # get the number of spaces in front of the bullet
+                bullet = l.index('{} '.format(self.list_marker)) 
+                indent_chars = l[:bullet]
+                
+                if len(indent_chars.replace(' ', '')) == 0: 
+                    # confirm there are only spaces in front of the bullet
+                    # then calculate what is the indentation level
+                    # in case n_spaces is not exactly equal to orig_indent, 
+                    # round up to preserve some level of indentation 
+                    n_spaces = len(indent_chars)
+                    indentation_level = math.ceil(n_spaces / orig_indent)
+                    
+                    # insert the new number of spaces into the list line
+                    new_indentation = indentation_level * self.indentation
+                    new_indent_chars = ' ' * new_indentation
+                    updated_l = new_indent_chars + l[bullet:]
+                    updated_lines.append(updated_l)
+                
+                else:
+                    print('this line may not be a list item, skipping:', l)
+                    updated_lines.append(l)
+            
+            else: 
+                # this line is not a list, do nothing
+                updated_lines.append(l)
+        
+        self.body = updated_lines
+        self.contents = self.frontmatter + self.body
