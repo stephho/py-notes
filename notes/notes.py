@@ -233,7 +233,7 @@ class note:
             h1 (str): This method will assign the title to `h1`
             body (list[str]): `h1` is part of the `body`. Some extra line breaks
                 and spacing may be cleaned up in the process of getting `h1`
-            contents (list[str]): If `body` is updated, so is `contents`
+            contents (list[str]): `h1` is part of the `contents`
         """
         title = ''
         h1_index = 0
@@ -255,6 +255,49 @@ class note:
             
             self.h1 = title
             self.contents = self.frontmatter + self.body
+
+
+    def update_h1(self, title: str): 
+        """
+        Update the H1 heading, aka the title, of the note. If the note has no 
+        H1 heading, it will be inserted into the note, as the first line of the
+        body
+
+        Arguments:
+            title: The string to use as the new `h1`. Can be passed with or 
+                without markdown notation
+
+        Modifies attributes:
+            h1 (str): This method will assign the new title to `h1`
+            body (list[str]): `h1` is part of the `body`. Some extra line breaks
+                and spacing may be cleaned up in the process of updating `h1`
+            contents (list[str]): `h1` is part of the `contents`
+        """
+        # check if there is an h1 in the note
+        if len(self.h1) == 0: 
+            self.get_h1()
+
+        h1_line = '# {}\n'.format(self.h1)
+
+        cleaned_title = title.strip().lstrip('# ').strip()
+        updated_h1 = '# {}\n'.format(cleaned_title)
+
+        try: 
+            h1_index = self.body.index(h1_line) 
+            self.body[h1_index] = updated_h1
+
+        except ValueError: 
+            # no h1 exists in note, add it as the first line of the body
+            updated_h1_lines = [updated_h1]
+            
+            # there should always be an empty line after the h1
+            if len(self.body[0].strip()) != 0: 
+                updated_h1_lines.append('\n')
+            
+            self.body = updated_h1_lines + self.body
+
+        self.h1 = cleaned_title
+        self.contents = self.frontmatter + self.body
 
 
     def change_list_indent(self, orig_indent: int=2):
