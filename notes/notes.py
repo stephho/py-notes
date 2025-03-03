@@ -221,6 +221,42 @@ class note:
         self.frontmatter_end = len(self.frontmatter) - 1
 
 
+    def get_h1(self): 
+        """
+        Get the H1 heading, aka the title, of the note
+
+        Note: If no H1 is found, use the `update_h1()` method to set one. There
+        should only be one H1 per note, but if there are multiple H1
+        headings, only the first H1 is set as `h1`
+
+        Modifies attributes:
+            h1 (str): This method will assign the title to `h1`
+            body (list[str]): `h1` is part of the `body`. Some extra line breaks
+                and spacing may be cleaned up in the process of getting `h1`
+            contents (list[str]): If `body` is updated, so is `contents`
+        """
+        title = ''
+        h1_index = 0
+        for l in self.body: 
+            if l.startswith('# '): 
+                title = l 
+                h1_index = self.body.index(l)
+                break 
+        
+        if title != '': 
+            title = title.lstrip('# ').strip()
+            h1_line = '# {}\n'.format(title)
+            self.body[h1_index] = h1_line
+            
+            # check if the line after h1 is a line break; if not, insert one
+            if len(self.body[h1_index + 1].strip()) != 0: 
+                self.body = (self.body[:h1_index + 1] 
+                    + ['\n'] + self.body[h1_index + 1:])
+            
+            self.h1 = title
+            self.contents = self.frontmatter + self.body
+
+
     def change_list_indent(self, orig_indent: int=2):
         """
         Change the number of spaces used in list indentation in the note's body
