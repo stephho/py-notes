@@ -16,6 +16,12 @@ def format_kebab_case(value: str) -> str:
         A string in kebab case
     """
     formatted_value = str(value).strip().lower().replace(' ', '-')
+    
+    # ':' is an illegal character in property names and tags
+    # it is often used in tags to create subtags or nested tags
+    # in obsidian, the character used to create nested tags is '/'
+    formatted_value = formatted_value.replace(':', '/')
+    
     return formatted_value
 
 
@@ -104,8 +110,8 @@ def write_frontmatter(prop_name: str, prop_value: str | list[str]):
 
     Example:
         ```
-        ['date-created: 2025-03-01\n']
-        ['media:\n', '  - "[[Survivor US]]"\n', '  - "[[Survivor US S48]]"\n']
+        ['date-created: 2025-03-01\\n']
+        ['media:\\n', '  - "[[Survivor US]]"\\n', '  - "[[Survivor US S48]]"\\n']
         ```
     """
     prop_single_line = '{prop_name}: {prop_value}\n'
