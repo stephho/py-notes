@@ -120,6 +120,7 @@ def write_frontmatter(prop_name: str, prop_value: str | list[str]):
     if type(prop_value) == list: 
         frontmatter_lines = [prop_multi_line.format(prop_name=prop_name)] + prop_value
     else:
+        prop_value = str(prop_value).strip()
         frontmatter_lines = [prop_single_line.format(prop_name=prop_name, prop_value=prop_value)]
     
     return frontmatter_lines
