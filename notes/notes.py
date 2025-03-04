@@ -139,7 +139,7 @@ class note:
                     'index': 3
                 }, 
                 'tags': { 
-                    'value': ['  - "#movie"\n', '  - "#status/in-progress"\n']
+                    'value': ['  - "#movie"\\n', '  - "#status/in-progress"\\n']
                     'order': 3
                     'index': 4
                 }
@@ -219,6 +219,86 @@ class note:
         # update attributes to account for reformatted frontmatter
         self.contents = self.frontmatter + self.body
         self.frontmatter_end = len(self.frontmatter) - 1
+
+
+    def add_property(self, prop_name: str, prop_order: int, prop_value: str | list[str]):
+        """
+        Add a new property and its value to the note
+        
+        Note: If the property already exists in the note, the property will not
+        be added. Use `update_property()` method instead
+
+        Arguments:
+            prop_name (str): Name of the new property to add. This will be 
+                changed to kebab case
+            prop_order (int): The order in which the new property appears in
+                the frontmatter. If prop_order = 1, then it will be the first
+                property. If another property already exists in the frontmatter
+                in the nth place, the new property will be inserted above it,
+                and the rest of the properties below it move down in the order
+            prop_value (str | list[str]): The value of the property. Multi-line
+                property values are lists
+
+        Modifies attributes:
+            properties (dict[str, dict[str, any]])
+            frontmatter (list[str]): The new property will also be added to the
+                frontmatter
+            frontmatter_end (int): Updating `frontmatter` also changes the 
+                index where the frontmatter ends
+            contents (list[str]): `frontmatter` is part of `contents`
+        """
+        prop_name = markdown_utils.format_kebab_case(prop_name)
+
+        # check if properties have been parsed
+        if len(self.properties) == 0: 
+            self.parse_properties()
+
+        # check if the property already exists, we don't want to overwrite it
+        if prop_name in self.properties: 
+            print('the property {} already exists, aborting'.format(prop_name))
+            return
+
+        # checks pass, let's add the new property to the frontmatter!
+        prop_value_lines = []
+        if type(prop_value) == list: 
+            is_tags = True if prop_name == 'tags' else False 
+            prop_value_list = markdown_utils.format_property_list(
+                prop_value=prop_value, is_tags=is_tags)
+            prop_value_lines = markdown_utils.write_frontmatter(
+                prop_name=prop_name, prop_value=prop_value_list)
+        else:
+            prop_value_lines = markdown_utils.write_frontmatter(
+                prop_name=prop_name, prop_value=prop_value)
+        
+        if prop_order > len(self.properties): 
+            # add the property as the last property in the frontmatter
+            new_prop_index = len(self.frontmatter) - 1
+
+        elif prop_order == 1: 
+            # add the property as the first property in the frontmatter 
+            new_prop_index = 1
+
+        else:
+            # add the property in the line after the preceding property
+            preceding_prop = prop_order - 1
+            for prop in self.properties: 
+                if self.properties[prop]['order'] == preceding_prop: 
+                    new_prop_index = self.properties[prop]['index'] + 1
+
+                    # if the preceding property is a list, it spans over 
+                    # multiple lines; the new property needs to be added after
+                    if type(self.properties[prop]['value']) == list: 
+                        new_prop_index += len(self.properties[prop]['value'])
+
+        self.frontmatter = (self.frontmatter[:new_prop_index] 
+            + prop_value_lines 
+            + self.frontmatter[new_prop_index:])
+        print('the property has been added: {}'.format(str(prop_value_lines)))
+
+        # update attributes affected by new frontmatter
+        self.contents = self.frontmatter + self.body 
+        self.frontmatter_end = len(self.frontmatter) - 1
+        self.parse_properties() 
 
 
     def get_h1(self): 
