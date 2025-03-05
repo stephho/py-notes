@@ -258,7 +258,7 @@ class note:
             print('the property {} already exists, aborting'.format(prop_name))
             return
 
-        # checks pass, let's add the new property to the frontmatter!
+        # checks pass, let's add the new property!
         prop_value_lines = []
         if type(prop_value) == list: 
             is_tags = True if prop_name == 'tags' else False 
@@ -291,14 +291,76 @@ class note:
                         new_prop_index += len(self.properties[prop]['value'])
 
         self.frontmatter = (self.frontmatter[:new_prop_index] 
-            + prop_value_lines 
-            + self.frontmatter[new_prop_index:])
-        print('the property has been added: {}'.format(str(prop_value_lines)))
+            + prop_value_lines + self.frontmatter[new_prop_index:])
 
         # update attributes affected by new frontmatter
         self.contents = self.frontmatter + self.body 
         self.frontmatter_end = len(self.frontmatter) - 1
         self.parse_properties() 
+        print('the property has been added: {}'.format(str(prop_value_lines)))
+
+
+    def update_property(self, prop_name: str, prop_value: str | list[str]):
+        """
+        Overwrite the value of an existing property in the note
+
+        Note: If the property does not exist in the note, the property will not
+        be added. Use `add_property()` method instead
+        
+        Arguments:
+            prop_name (str): Name of the property to update. This will be 
+                changed to kebab case
+            prop_value (str | list[str]): The new value of the property. Multi-
+                line property values are lists
+        
+        Modifies attributes:
+            properties (dict[str, dict[str, any]])
+            frontmatter (list[str]): The new property value will also be 
+                written to the frontmatter
+            frontmatter_end (int): Updating `frontmatter` also changes the 
+                index where the frontmatter ends
+            contents (list[str]): `frontmatter` is part of `contents`
+        """
+        prop_name = markdown_utils.format_kebab_case(prop_name)
+
+        # check if properties have been parsed
+        if len(self.properties) == 0: 
+            self.parse_properties()
+
+        # check if the property exists
+        if prop_name not in self.properties: 
+            print('the property {} does not exist, aborting. please use '
+                'add_property() method instead'.format(prop_name))
+            return
+
+        # checks pass, let's update the property value!
+        prop_index = self.properties[prop_name]['index']
+        curr_value = self.properties[prop_name]['value']
+        curr_lines = 1 # how many lines to replace in the frontmatter
+        if type(curr_value) == list:
+            curr_lines += len(curr_value)
+        
+        # NOTE: it is possible for the property value to change from str to
+        # list or vice versa. this is not always desirable
+        prop_value_lines = []
+        if type(prop_value) == list:
+            is_tags = True if prop_name == 'tags' else False 
+            prop_value_list = markdown_utils.format_property_list(
+                prop_value=prop_value, is_tags=is_tags)
+            prop_value_lines = markdown_utils.write_frontmatter(
+                prop_name=prop_name, prop_value=prop_value_list)
+        else:
+            prop_value_lines = markdown_utils.write_frontmatter(
+                prop_name=prop_name, prop_value=prop_value)
+
+        self.frontmatter = (self.frontmatter[:prop_index] + prop_value_lines 
+            + self.frontmatter[prop_index + curr_lines:])
+
+        # update attributes affected by new frontmatter
+        self.contents = self.frontmatter + self.body 
+        self.frontmatter_end = len(self.frontmatter) - 1
+        self.parse_properties()
+        print('the property has been updated: {}'.format(str(prop_value_lines)))
 
 
     def get_h1(self): 
