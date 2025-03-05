@@ -45,7 +45,7 @@ def format_property_list_item(item: str, is_tags: bool=False) -> str:
         - If the item is a tag, it is formatted with a hashtag wrapped in 
           double quotes and is changed to kebab case, `'  - "#item"\\n'`
 
-    Example:
+    Examples:
         - `In progress` (a tag) --> `'  - "#in-progress"\\n'`
         - `[[Survivor US S48]]` --> `'  - "[[Survivor US S48]]"\\n'`
     """
@@ -96,9 +96,50 @@ def format_property_list(prop_value: list[str], is_tags: bool=False) -> list[str
     return formatted_prop_value
 
 
-def write_frontmatter(prop_name: str, prop_value: str | list[str]): 
+def format_property_string(prop_value: any) -> str:
+    """
+    Formats a single-line property value in YAML notation
+
+    For all property data types besides list (text, list, number, checkbox 
+    (boolean), and date), the property value will be converted to a string. 
+    Internal links will be wrapped in double quotes as is required in YAML. 
+    List type properties should use the `format_property_list()` function 
+    instead
+
+    Arguments:
+        prop_value: The value to be formatted in YAML
+    
+    Returns:
+        A string to be used as a property value
+    
+    Examples:
+        - `[[Link]]` --> `'"[[Link]]"'`
+        - `True` --> `'true'`
+        - `2025-03-05 ` --> `'2025-03-05'`
+        - `3` --> `'3'`
+    """
+    formatted_prop_value = str(prop_value).strip()
+
+    # internal links must be wrapped in double quotes
+    if (formatted_prop_value.startswith('[[') 
+        and formatted_prop_value.endswith(']]')): 
+        formatted_prop_value = '"{}"'.format(formatted_prop_value)
+
+    # boolean aka checkbox property type
+    elif formatted_prop_value == ('True' or 'False'):
+        formatted_prop_value = formatted_prop_value.lower()
+    
+    return formatted_prop_value
+
+
+def write_frontmatter(prop_name: str, prop_value: str | list[str]) -> list[str]:
     """
     Write a property and its value to lines of frontmatter in YAML notation
+
+    This function assumes the property names and values are already formatted 
+    properly for YAML frontmatter. Use the `format_property_string()` and 
+    `format_property_list()` (for property values), and `format_kebab_case()` 
+    (for property names) functions first 
     
     Arguments:
         prop_name: Name of the property. Should be in kebab case
@@ -120,7 +161,6 @@ def write_frontmatter(prop_name: str, prop_value: str | list[str]):
     if type(prop_value) == list: 
         frontmatter_lines = [prop_multi_line.format(prop_name=prop_name)] + prop_value
     else:
-        prop_value = str(prop_value).strip()
         frontmatter_lines = [prop_single_line.format(prop_name=prop_name, prop_value=prop_value)]
     
     return frontmatter_lines
