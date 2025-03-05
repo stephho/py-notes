@@ -274,21 +274,13 @@ class note:
             # add the property as the last property in the frontmatter
             new_prop_index = len(self.frontmatter) - 1
 
-        elif prop_order == 1: 
-            # add the property as the first property in the frontmatter 
-            new_prop_index = 1
-
         else:
-            # add the property in the line after the preceding property
-            preceding_prop = prop_order - 1
+            # add the property where the property that currently has the same
+            # prop_order is. the new property will take its place and bump it 
+            # down in the order 
             for prop in self.properties: 
-                if self.properties[prop]['order'] == preceding_prop: 
-                    new_prop_index = self.properties[prop]['index'] + 1
-
-                    # if the preceding property is a list, it spans over 
-                    # multiple lines; the new property needs to be added after
-                    if type(self.properties[prop]['value']) == list: 
-                        new_prop_index += len(self.properties[prop]['value'])
+                if self.properties[prop]['order'] == prop_order: 
+                    new_prop_index = self.properties[prop]['index']
 
         self.frontmatter = (self.frontmatter[:new_prop_index] 
             + prop_value_lines + self.frontmatter[new_prop_index:])
