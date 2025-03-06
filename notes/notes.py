@@ -492,3 +492,132 @@ class note:
         
         self.body = updated_lines
         self.contents = self.frontmatter + self.body
+
+
+    def convert_tag_to_property(self, tag_map: dict[str, str | list[str]], 
+        prop_name: str, overwrite: bool=False, prop_order: int=None):
+        """
+        Convert a tag(s) in the `tags` property to a corresponding value in 
+        another property
+
+        Note: If a note has multiple tags that are in tag_map, only the first
+        tag is converted. TODO: enable multiple tags to be converted by taking
+        into consideration list type properties
+
+        Arguments:
+            tag_map: A dictionary where the keys are the individual tags to be 
+                removed, and the values are the corresponding property value 
+                each tag should be converted to. The tags and values can be 
+                provided with or without YAML formatting or the hashtag
+                
+                Example
+                ```
+                {
+                    '#status/not-started':'not started', 
+                    '#status/in-progress':'in progress'
+                }
+                ```
+
+            prop_name: The property to move the tag to. If the property does 
+                not exist, it will be added. Name will be changed to kebab case
+            overwrite: Only applies if the property already exists and is a 
+                list type. Default is to append the tag to the property's 
+                existing value. If set to `True`, the property value will be 
+                overwritten. If the property is any other data type, the value 
+                will be overwritten and this argument is ignored
+            prop_order: Optionally define what order the property should be in
+                the note's frontmatter. Only applies if the property is net-new
+                and needs to be added. If none is provided, the property will 
+                be added before the `date-created` property or last
+
+        Modifies attributes:
+            properties (dict[str, dict[str, any]])
+            frontmatter (list[str]): The tag(s) will be removed and the new
+                property values will be written to the frontmatter
+            frontmatter_end (int): Updating `frontmatter` also changes the 
+                index where the frontmatter ends
+            contents (list[str]): `frontmatter` is part of `contents`
+        """
+        # check if properties have been parsed
+        if len(self.properties) == 0: 
+            self.parse_properties()
+
+        # format the inputs
+        prop_name = markdown_utils.format_kebab_case(prop_name)
+
+        value_dict = {}
+        for k, v in tag_map.items(): 
+            tag_formatted = markdown_utils.format_property_list_item(item=k, 
+                is_tags=True)
+
+            if type(v) == list: 
+                v_formatted = markdown_utils.format_property_list(prop_value=v)
+            else:
+                v_formatted = markdown_utils.format_property_string(prop_value=v)
+
+            value_dict[tag_formatted] = v_formatted
+        
+        # get the existing tags
+        if 'tags' in self.properties:
+            curr_tags = self.properties['tags']['value']
+        else:
+            print('there are no tags in this note. cannot convert tag to '
+                'property')
+            return
+
+        found_tag = False
+        new_tags = []
+        for t in curr_tags: 
+            if t in value_dict and not found_tag: 
+                # this is the tag we want to remove and convert to a property
+                # assume only one tag to convert. if note has multiple tags 
+                # in tag_map, only take the first tag found
+                found_tag = True 
+                converted_tag_value = value_dict[t]
+            else: 
+                # keep all the other tags, as tags 
+                new_tags.append(t)
+        
+        if not found_tag: 
+            print('tag was not found in this note. cannot replace tag as '
+                'property')
+            return
+        
+        # check if the property (to be updated with tag) already exists
+        if prop_name in self.properties: 
+            curr_prop_value = self.properties[prop_name]['value']
+
+            if type(curr_prop_value) == list: 
+                # with a list property, we have the option to append the 
+                # converted tag or overwrite the current property value 
+                if overwrite: 
+                    prop_value = converted_tag_value 
+                else: 
+                    prop_value = curr_prop_value
+                    if type(converted_tag_value) == list: 
+                        prop_value += converted_tag_value
+                    else: 
+                        prop_value.append(converted_tag_value)
+            
+            else:
+                # property is not a list type, the only option is to overwrite
+                prop_value = curr_prop_value 
+
+            self.update_property(prop_name=prop_name, prop_value=prop_value)
+        
+        else: 
+            # the property does not exist, let's add it 
+            # where should we add the new property? 
+            if prop_order is None: 
+                # default order is before the date-created, or last
+                try: 
+                    # TODO: this is extremely specific to me
+                    prop_order = self.properties['date-created']['order']
+                except: 
+                    prop_order = len(self.properties) + 1
+
+            self.add_property(prop_name=prop_name, prop_order=prop_order, 
+                prop_value=converted_tag_value)
+        
+        # update tags property to remove the tag
+        self.update_property(prop_name='tags', prop_value=new_tags)
