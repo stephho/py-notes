@@ -2,6 +2,7 @@
 Helper functions for working with dates, such as date formats and file dates
 """
 
+import os
 from datetime import datetime
 
 def convert_date_format(orig_date: str, 
@@ -44,3 +45,30 @@ def convert_date_format(orig_date: str,
         print('could not convert date: {}'.format(orig_date))
     
     return new_date
+
+
+def get_file_created_date(filename: str, format: bool=True) -> str | datetime:
+    """
+    Get a file's created date, according to the operating system
+
+    Note: This is tested only on macOS
+
+    Arguments:
+        filename: The file to get the created date of
+        format: If `True`, the file's created date is returned as a string in 
+            `YYYY-MM-DD` format (i.e., `%Y-%m-%d` in python `datetime` format 
+            code). If `False`, the file's created date is returned as a 
+            `datetime` object
+    
+    Returns:
+        The file's created date, as either a string or datetime object
+    """
+    # on macOS, os.path.getctime is not accurate, use st_birthtime instead
+    file_created_time = os.stat(filename).st_birthtime
+    file_created_time = datetime.fromtimestamp(file_created_time)
+    
+    file_created_date = file_created_time
+    if format: 
+        file_created_date = file_created_time.strftime('%Y-%m-%d')
+    
+    return file_created_date
