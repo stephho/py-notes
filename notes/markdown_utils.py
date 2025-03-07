@@ -164,3 +164,26 @@ def write_frontmatter(prop_name: str, prop_value: str | list[str]) -> list[str]:
         frontmatter_lines = [prop_single_line.format(prop_name=prop_name, prop_value=prop_value)]
     
     return frontmatter_lines
+
+
+def legalize_filename(filename: str) -> str: 
+    """
+    Convert a string into a valid filename by replacing characters not allowed
+    in filenames in macOS
+    
+    Illegal characters are ... and converted to...: 
+    - `\\` --> ` ` (space)
+    - `/` --> ` ` (space)
+    - `:` --> ` -` (space hyphen)
+
+    Arguments:
+        filename: The string that represents the name of a file
+    
+    Returns:
+        A string with illegal characters replaced
+    """
+    orig_filename = filename.strip()
+    legal_filename = (orig_filename.replace(':', ' -').replace('/', ' ')
+        .replace('\\', ' '))
+    
+    return legal_filename
