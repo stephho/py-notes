@@ -5,6 +5,7 @@ Helper functions for working with dates, such as date formats and file dates
 import os
 from datetime import datetime
 import subprocess
+import string
 
 def convert_date_format(orig_date: str, 
     check_formats: list[str]=['%y%m%d', '%Y/%m/%d', '%m/%d/%Y'], 
@@ -42,10 +43,50 @@ def convert_date_format(orig_date: str,
             except ValueError: 
                 pass
     
-    if not is_converted: 
-        print('could not convert date: {}'.format(orig_date))
+    if is_converted: 
+        print('converted date from {} to {}'.format(orig_date, new_date))
     
     return new_date
+
+
+def convert_date_inline(line: str, 
+    check_formats: list[str]=['%y%m%d', '%Y/%m/%d', '%m/%d/%Y'], 
+    new_format: str='%Y-%m-%d') -> str: 
+    """
+    Check each word in a given line if it's a date; if so, convert the date 
+    string into the desired date format
+
+    Arguments:
+        line: The line of text to convert dates in
+        check_formats: The date formats that the line might contain and can 
+            be converted from, in python `datetime` format codes. The default 
+            date formats checked for are
+            - `%y%m%d` = `YYMMDD`, e.g. 250531
+            - `%Y/%m/%d` = `YYYY/MM/DD`, e.g. 2025/05/31
+            - `%m/%d/%Y` = `MM/DD/YYYY`, e.g. 05/31/2025
+        new_format: The date format to convert all dates in the line to
+    
+    Returns:
+        The original line with dates, if any, converted into the desired date 
+        format
+    """
+    words = line.rstrip('\n').split(' ')
+
+    for w in words: 
+
+        # punctuation will interfere with checking for dates
+        w_wo_punc = w.rstrip(string.punctuation).lstrip(string.punctuation)
+        w_date = convert_date_format(w_wo_punc, check_formats, new_format)
+
+        if w_date != w_wo_punc: 
+            # date is converted, replace it in the line
+            w_new = w.replace(w_wo_punc, w_date)
+            w_pos = words.index(w) 
+            words[w_pos] = w_new
+
+    converted_line = ' '.join(words) + '\n'
+
+    return converted_line
 
 
 def get_file_created_date(filename: str, format: bool=True) -> str | datetime:
