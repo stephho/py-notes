@@ -383,7 +383,15 @@ class note:
             self.body[h1_index] = h1_line
             
             # check if the line after h1 is a line break; if not, insert one
-            if len(self.body[h1_index + 1].strip()) != 0: 
+            insert_line = False
+            try: 
+                if len(self.body[h1_index + 1].strip()) != 0: 
+                    insert_line = True
+            except IndexError: 
+                # h1 is the last line in the note
+                insert_line = True
+
+            if insert_line:
                 self.body = (self.body[:h1_index + 1] 
                     + ['\n'] + self.body[h1_index + 1:])
             
