@@ -36,6 +36,12 @@ def convert_date_format(orig_date: str,
     new_date = orig_date
     for f in check_formats:
         if not is_converted: 
+            if f == '%y%m%d' and len(orig_date) != 6: 
+                # %m and %d are not required to be zero-padded so it can
+                # mistinterpret years as full dates, e.g. 1917 becomes 2019-01-07.
+                # requiring the date to be 6 digits long will skip over years
+                continue 
+            
             try: 
                 dt = datetime.strptime(orig_date, f)
                 new_date = datetime.strftime(dt, new_format)
