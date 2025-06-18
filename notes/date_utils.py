@@ -76,7 +76,7 @@ def convert_date_inline(line: str,
         The original line with dates, if any, converted into the desired date 
         format
     """
-    words = line.rstrip('\n').split(' ')
+    words = line.rstrip().split(' ')
 
     for w in words: 
 

@@ -182,7 +182,8 @@ class note:
                 # then the property value is in the same line as the property name
                 try: 
                     prop_line = self.frontmatter[i]
-                    prop_value = prop_line.lstrip('{}:'.format(prop_name)).strip()
+                    split_line = prop_line.split('{}:'.format(prop_name))
+                    prop_value = ''.join(split_line[1:]).strip()
                 except IndexError: 
                     # the property has no value 
                     pass
@@ -378,7 +379,7 @@ class note:
                 break 
         
         if title != '': 
-            title = title.lstrip('# ').strip()
+            title = title.lstrip('#').strip()
             h1_line = '# {}\n'.format(title)
             self.body[h1_index] = h1_line
             
@@ -421,7 +422,7 @@ class note:
 
         h1_line = '# {}\n'.format(self.h1)
 
-        cleaned_title = title.strip().lstrip('# ').strip()
+        cleaned_title = title.strip().lstrip('#').strip()
         updated_h1 = '# {}\n'.format(cleaned_title)
 
         try: 

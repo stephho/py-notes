@@ -51,7 +51,7 @@ def format_property_list_item(item: str, is_tags: bool=False) -> str:
     """
     list_template = '  - {}\n'
     formatted_item = ''
-    cleaned_item = str(item).strip().lstrip('- ').replace('"', '')
+    cleaned_item = str(item).strip().lstrip('-').strip().replace('"', '')
     
     if is_tags:
         formatted_item = format_kebab_case(cleaned_item)
