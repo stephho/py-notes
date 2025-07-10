@@ -443,7 +443,7 @@ class note:
         self.contents = self.frontmatter + self.body
 
 
-    def change_list_indent(self, orig_indent: int=2):
+    def change_list_indent(self, orig_indent: int=2, level_up: bool=False):
         """
         Change the number of spaces used in list indentation in the note's body
 
@@ -454,6 +454,9 @@ class note:
         Arguments:
             orig_indent (int): The number of spaces used in one level of 
                 indentation in the original note's body
+            level_up (bool): If set to true, the number of spaces used in one 
+                level of indentation is not changed, but all list items are 
+                moved up one level in the heirarchy. `orig_indent` is ignored
 
         Modifies attributes:
             body (list[str])
@@ -471,7 +474,7 @@ class note:
                 # this line is a 1st level list item, i.e. not indented
                 updated_lines.append(l)
 
-            elif l.strip().startswith('{} '.format(self.list_marker)): 
+            elif l.lstrip().startswith('{} '.format(self.list_marker)): 
                 # this line is a list item
                 # get the number of spaces in front of the bullet
                 bullet = l.index('{} '.format(self.list_marker)) 
@@ -480,10 +483,17 @@ class note:
                 if len(indent_chars.replace(' ', '')) == 0: 
                     # confirm there are only spaces in front of the bullet
                     # then calculate what is the indentation level
-                    # in case n_spaces is not exactly equal to orig_indent, 
-                    # round up to preserve some level of indentation 
                     n_spaces = len(indent_chars)
-                    indentation_level = math.ceil(n_spaces / orig_indent)
+
+                    if level_up: 
+                        # we're not changing the size of the indentation
+                        # just moving all list items up one level
+                        indentation_level = int((n_spaces - self.indentation) / self.indentation)
+                    
+                    else:
+                        # in case n_spaces is not exactly equal to orig_indent, 
+                        # round up to preserve some level of indentation 
+                        indentation_level = math.ceil(n_spaces / orig_indent)
                     
                     # insert the new number of spaces into the list line
                     new_indentation = indentation_level * self.indentation
