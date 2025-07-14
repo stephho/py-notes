@@ -122,6 +122,30 @@ def get_file_created_date(filename: str, format: bool=True) -> str | datetime:
     return file_created_date
 
 
+def get_file_modified_date(filename: str, format: bool=True) -> str | datetime:
+    """
+    Get a file's modified date, according to the operating system
+
+    Arguments:
+        filename: The file to get the modified date of
+        format: If `True`, the file's modified date is returned as a string in 
+            `YYYY-MM-DD` format (i.e., `%Y-%m-%d` in python `datetime` format 
+            code). If `False`, the file's created date is returned as a 
+            `datetime` object
+    
+    Returns:
+        The file's modified date, as either a string or datetime object
+    """
+    file_modified_time = os.path.getmtime(filename)
+    file_modified_time = datetime.fromtimestamp(file_modified_time)
+    
+    file_modified_date = file_modified_time
+    if format: 
+        file_modified_date = file_modified_time.strftime('%Y-%m-%d')
+    
+    return file_modified_date
+
+
 def change_file_created_date(filename: str, new_created_date: str | datetime):
     """
     Update a file's created date in the operating system
