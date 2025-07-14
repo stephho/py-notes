@@ -451,6 +451,8 @@ class note:
         attribute `indentation` (default: `4`). This method does not affect 
         lists in frontmatter, which always use 2 spaces indentation
 
+        This method will also convert tabs used as indentation into spaces
+
         Arguments:
             orig_indent (int): The number of spaces used in one level of 
                 indentation in the original note's body
@@ -469,46 +471,66 @@ class note:
             return 
 
         for l in self.body:
+            
+            to_change = True if level_up else False
+            n_tabs = 0
 
             if l.startswith('{} '.format(self.list_marker)): 
                 # this line is a 1st level list item, i.e. not indented
-                updated_lines.append(l)
+                pass
 
             elif l.lstrip().startswith('{} '.format(self.list_marker)): 
-                # this line is a list item
-                # get the number of spaces in front of the bullet
+                # this line is an indented list item
+                # get the characters in front of the bullet
                 bullet = l.index('{} '.format(self.list_marker)) 
                 indent_chars = l[:bullet]
                 
                 if len(indent_chars.replace(' ', '')) == 0: 
-                    # confirm there are only spaces in front of the bullet
-                    # then calculate what is the indentation level
+                    # this list item uses spaces for indentation
                     n_spaces = len(indent_chars)
+                    to_change = True
 
-                    if level_up: 
-                        # we're not changing the size of the indentation
-                        # just moving all list items up one level
-                        indentation_level = int((n_spaces - self.indentation) / self.indentation)
+                elif len(indent_chars.replace('\t', '')) == 0:
+                    # this list item uses tabs for indentation, convert to spaces 
+                    n_tabs = len(indent_chars)
+                    n_spaces = ' ' * (n_tabs * self.indentation)
+                    to_change = True
+
+                else:
+                    print('this line may not be a list item, skipping:', l)
+                    pass
+                
+            else: 
+                # this line is not a list, do nothing
+                pass 
+
+            if to_change: 
+                if level_up: 
+                    # we're not changing the size of the indentation
+                    # just moving all list items up one level
+                    indentation_level = int((n_spaces - self.indentation) / self.indentation)
+                
+                else:
                     
-                    else:
+                    if n_tabs > 0: 
+                        indentation_level = n_tabs
+                        new_indent_chars = n_spaces
+
+                    else: 
                         # in case n_spaces is not exactly equal to orig_indent, 
                         # round up to preserve some level of indentation 
                         indentation_level = math.ceil(n_spaces / orig_indent)
-                    
-                    # insert the new number of spaces into the list line
-                    new_indentation = indentation_level * self.indentation
-                    new_indent_chars = ' ' * new_indentation
+
+                        # insert the new number of spaces into the list line
+                        new_indentation = indentation_level * self.indentation
+                        new_indent_chars = ' ' * new_indentation
+
                     updated_l = new_indent_chars + l[bullet:]
                     updated_lines.append(updated_l)
-                
-                else:
-                    print('this line may not be a list item, skipping:', l)
-                    updated_lines.append(l)
-            
+
             else: 
-                # this line is not a list, do nothing
                 updated_lines.append(l)
-        
+
         self.body = updated_lines
         self.contents = self.frontmatter + self.body
 
