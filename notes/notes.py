@@ -79,7 +79,11 @@ class note:
 
         # parse the note contents into frontmatter and body
         # check if the note has frontmatter
-        if self.contents[0] == self.frontmatter_marker:
+        if len(self.contents) == 0: 
+            # the note is empty, add empty frontmatter
+            self.contents = self.frontmatter
+        
+        elif self.contents[0] == self.frontmatter_marker:
             # everything in between the first --- and second --- is frontmatter
             self.frontmatter_end = self.contents[1:].index(self.frontmatter_marker) + 1
             self.frontmatter = self.contents[self.frontmatter_start:self.frontmatter_end + 1]
@@ -88,11 +92,11 @@ class note:
             for line in self.frontmatter: 
                 if len(line.strip()) == 0: 
                     self.frontmatter.remove(line)
-        
-        else:
+                    self.frontmatter_end -= 1
+        else: 
             # there is no frontmatter in the note, add empty frontmatter
             self.contents = self.frontmatter + self.contents
-
+        
         # the rest of the note contents after the frontmatter is the body
         self.body = self.contents[self.frontmatter_end + 1:]
 
