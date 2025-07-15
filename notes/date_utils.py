@@ -95,7 +95,7 @@ def convert_date_inline(line: str,
     return converted_line
 
 
-def get_file_created_date(filename: str, format: bool=True) -> str | datetime:
+def get_file_created_date(filename: str) -> tuple[str, datetime]:
     """
     Get a file's created date, according to the operating system
 
@@ -103,47 +103,35 @@ def get_file_created_date(filename: str, format: bool=True) -> str | datetime:
 
     Arguments:
         filename: The file to get the created date of
-        format: If `True`, the file's created date is returned as a string in 
-            `YYYY-MM-DD` format (i.e., `%Y-%m-%d` in python `datetime` format 
-            code). If `False`, the file's created date is returned as a 
-            `datetime` object
     
     Returns:
-        The file's created date, as either a string or datetime object
+        A tuple with the file's created date in two formats: a string in 
+        `YYYY-MM-DD` format, datetime object
     """
     # on macOS, os.path.getctime is not accurate, use st_birthtime instead
     file_created_time = os.stat(filename).st_birthtime
-    file_created_time = datetime.fromtimestamp(file_created_time)
+    file_created_dt = datetime.fromtimestamp(file_created_time)
+    file_created_date = file_created_dt.strftime('%Y-%m-%d')
     
-    file_created_date = file_created_time
-    if format: 
-        file_created_date = file_created_time.strftime('%Y-%m-%d')
-    
-    return file_created_date
+    return (file_created_dt, file_created_date)
 
 
-def get_file_modified_date(filename: str, format: bool=True) -> str | datetime:
+def get_file_modified_date(filename: str) -> tuple[str, datetime]:
     """
     Get a file's modified date, according to the operating system
 
     Arguments:
         filename: The file to get the modified date of
-        format: If `True`, the file's modified date is returned as a string in 
-            `YYYY-MM-DD` format (i.e., `%Y-%m-%d` in python `datetime` format 
-            code). If `False`, the file's created date is returned as a 
-            `datetime` object
     
     Returns:
-        The file's modified date, as either a string or datetime object
+        A tuple with the file's modified date in two formats: a string in 
+        `YYYY-MM-DD` format, datetime object
     """
     file_modified_time = os.path.getmtime(filename)
-    file_modified_time = datetime.fromtimestamp(file_modified_time)
+    file_modified_dt = datetime.fromtimestamp(file_modified_time)
+    file_modified_date = file_modified_dt.strftime('%Y-%m-%d')
     
-    file_modified_date = file_modified_time
-    if format: 
-        file_modified_date = file_modified_time.strftime('%Y-%m-%d')
-    
-    return file_modified_date
+    return (file_modified_dt, file_modified_date) 
 
 
 def change_file_created_date(filename: str, new_created_date: str | datetime):
