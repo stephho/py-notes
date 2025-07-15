@@ -2,6 +2,8 @@
 Helper functions for working with markdown text
 """
 
+import re
+
 def format_kebab_case(value: str) -> str: 
     """
     Formats a string into kebab case
@@ -161,7 +163,8 @@ def write_frontmatter(prop_name: str, prop_value: str | list[str]) -> list[str]:
     if type(prop_value) == list: 
         frontmatter_lines = [prop_multi_line.format(prop_name=prop_name)] + prop_value
     else:
-        frontmatter_lines = [prop_single_line.format(prop_name=prop_name, prop_value=prop_value)]
+        frontmatter_lines = [prop_single_line.format(prop_name=prop_name, 
+                                                     prop_value=prop_value)]
     
     return frontmatter_lines
 
@@ -187,3 +190,81 @@ def legalize_filename(filename: str) -> str:
         .replace('\\', ' '))
     
     return legal_filename
+
+
+def convert_html_to_md(input: str | list[str]) -> str:
+    """
+    Convert basic HTML formatting into markdown
+
+    This function will convert the following: 
+    - Bold: `<b>abc</b>` --> `**abc**`
+    - Italics: `<i>abc</i>` --> `*abc*`
+    - Blockquotes: `<blockquote>abc</blockquote> --> `> abc`
+    - Links: `<a href="https://abc.com">abc</a>` --> `[abc](https://abc.com)`
+
+    Arguments:
+        input: The string or list of strings containing HTML tags
+
+    Returns:
+        A string with the HTML tags replaced with markdown syntax. If the input
+        was a list of strings, then a list of strings will be returned
+    """
+    is_list = False
+    if type(input) == list: 
+        input_str = ''.join(input)
+        is_list = True
+    elif type(input) == str: 
+        input_str = input
+    else: 
+        print('aborting. input must be a string or list of strings')
+        return 
+
+    # BOLD, ITALICS
+    input_str = (input_str.replace('<b>', '**').replace('</b>', '**')
+                 .replace('<i>', '*').replace('</i>','*'))
+    
+    # BLOCKQUOTES
+    blockquote_pattern = re.compile(r"<blockquote>(.*?)</blockquote>", 
+                                    flags=re.DOTALL)
+    while blockquote_pattern.search(input_str) != None: 
+        blockquote_match = blockquote_pattern.search(input_str)
+        if blockquote_match:
+            blockquote_contents = blockquote_match.group(1)
+
+            # blockquotes may span over multiple lines
+            # each line must begin with `> `
+            blockquote_lines = blockquote_contents.splitlines()
+            blockquote_md = ['> {}\n'.format(x.strip()) for x in blockquote_lines]
+            blockquote_md = ''.join(blockquote_md)
+            
+            input_str = (input_str[:blockquote_match.start(0)] + blockquote_md
+                         + input_str[blockquote_match.end(0):])
+
+    # LINKS
+    # explanation of regex
+    # - match must start with `<a href="` (single or double quotes)
+    # - match must end with `</a>`
+    # - group 1: everything between `<a href="` and the next single or double 
+    #       quote. this is the url
+    # - non-capturing group: everything after the url's closing quote and the 
+    #       `<a href`'s closing bracket, `>`. these are extraneous html 
+    #       attributes, e.g. `target="_blank"`
+    # - group 2: everything after the closing bracket `>` and `</a>`. this is 
+    #       the text of the link. may be empty
+    ahref_pattern = re.compile(r"<a href=[\"'](.*?)[\"'](?:.*?)>(.*?)</a>", 
+                               flags=re.DOTALL)
+    while ahref_pattern.search(input_str) != None: 
+        ahref_match = ahref_pattern.search(input_str)
+        if ahref_match: 
+            url = ahref_match.group(1)
+            link_name = ahref_match.group(2).strip()
+            link_md = '[{}]({})'.format(link_name, url)
+            input_str = (input_str[:ahref_match.start(0)] + link_md 
+                         + input_str[ahref_match.end(0):])
+    
+    if is_list: 
+        result = input_str.splitlines()
+    else: 
+        result = input_str
+    
+    return result 
