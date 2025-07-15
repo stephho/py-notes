@@ -113,7 +113,7 @@ def get_file_created_date(filename: str) -> tuple[str, datetime]:
     file_created_dt = datetime.fromtimestamp(file_created_time)
     file_created_date = file_created_dt.strftime('%Y-%m-%d')
     
-    return (file_created_dt, file_created_date)
+    return (file_created_date, file_created_dt)
 
 
 def get_file_modified_date(filename: str) -> tuple[str, datetime]:
@@ -131,7 +131,7 @@ def get_file_modified_date(filename: str) -> tuple[str, datetime]:
     file_modified_dt = datetime.fromtimestamp(file_modified_time)
     file_modified_date = file_modified_dt.strftime('%Y-%m-%d')
     
-    return (file_modified_dt, file_modified_date) 
+    return (file_modified_date, file_modified_dt) 
 
 
 def change_file_created_date(filename: str, new_created_date: str | datetime):
