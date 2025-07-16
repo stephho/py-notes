@@ -161,7 +161,8 @@ def write_frontmatter(prop_name: str, prop_value: str | list[str]) -> list[str]:
     prop_multi_line = '{prop_name}:\n'
 
     if type(prop_value) == list: 
-        frontmatter_lines = [prop_multi_line.format(prop_name=prop_name)] + prop_value
+        frontmatter_lines = ([prop_multi_line.format(prop_name=prop_name)] 
+                             + prop_value)
     else:
         frontmatter_lines = [prop_single_line.format(prop_name=prop_name, 
                                                      prop_value=prop_value)]

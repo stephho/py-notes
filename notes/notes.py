@@ -70,7 +70,7 @@ class note:
         self.indentation = 4
 
         self.contents = contents
-        self.frontmatter_start = 0 # frontmatter is always at the start of the note
+        self.frontmatter_start = 0 # frontmatter is always at the start of note
         self.frontmatter_end = 1 # default empty frontmatter, so 2 lines
         self.frontmatter = [self.frontmatter_marker, self.frontmatter_marker]
         self.properties = {}
@@ -85,8 +85,12 @@ class note:
         
         elif self.contents[0] == self.frontmatter_marker:
             # everything in between the first --- and second --- is frontmatter
-            self.frontmatter_end = self.contents[1:].index(self.frontmatter_marker) + 1
-            self.frontmatter = self.contents[self.frontmatter_start:self.frontmatter_end + 1]
+            self.frontmatter_end = (
+                self.contents[1:].index(self.frontmatter_marker) + 1
+            )
+            self.frontmatter = (
+                self.contents[self.frontmatter_start:self.frontmatter_end + 1]
+            )
 
             # there should be no empty lines in the frontmatter
             for line in self.frontmatter: 
@@ -183,7 +187,7 @@ class note:
             prop_value_lines = self.frontmatter[i+1:i2]
 
             if len(prop_value_lines) == 0: 
-                # then the property value is in the same line as the property name
+                # the property value is in the same line as the property name
                 try: 
                     prop_line = self.frontmatter[i]
                     split_line = prop_line.split('{}:'.format(prop_name))
@@ -226,7 +230,8 @@ class note:
         self.frontmatter_end = len(self.frontmatter) - 1
 
 
-    def add_property(self, prop_name: str, prop_order: int, prop_value: str | list[str]):
+    def add_property(self, prop_name: str, prop_order: int, 
+                     prop_value: str | list[str]):
         """
         Add a new property and its value to the note
         
@@ -510,9 +515,10 @@ class note:
 
             if to_change: 
                 if level_up: 
-                    # we're not changing the size of the indentation
+                    # no change to the size of the indentation
                     # just moving all list items up one level
-                    indentation_level = int((n_spaces - self.indentation) / self.indentation)
+                    indentation_level = int((n_spaces - self.indentation)
+                                            / self.indentation)
                 
                 else:
                     
