@@ -242,12 +242,12 @@ def convert_html_to_md(input: str | list[str]) -> str:
                          + input_str[blockquote_match.end(0):])
 
     # LINKS
-    # explanation of regex
+    # regex explanation
     # - match must start with `<a href="` (single or double quotes)
     # - match must end with `</a>`
     # - group 1: everything between `<a href="` and the next single or double 
     #       quote. this is the url
-    # - non-capturing group: everything after the url's closing quote and the 
+    # - non-capturing group: everything between the url's closing quote and the 
     #       `<a href`'s closing bracket, `>`. these are extraneous html 
     #       attributes, e.g. `target="_blank"`
     # - group 2: everything after the closing bracket `>` and `</a>`. this is 
@@ -268,4 +268,65 @@ def convert_html_to_md(input: str | list[str]) -> str:
     else: 
         result = input_str
     
-    return result 
+    return result
+
+
+def internalize_links(input: str | list[str]) -> str:
+    """
+    Convert internal links from using markdown link syntax to wikilinks
+    
+    `[](xyz.jpg)` --> `[[xyz.jpg]]`
+
+    External markdown links (e.g. a URL) will not be converted.
+
+    Arguments:
+        input: The string or list of strings containing markdown links
+
+    Returns:
+        A string with internal markdown links replaced with wikilinks. If the 
+        input was a list of strings, then a list of strings will be returned
+    """
+    is_list = False
+    if type(input) == list: 
+        input_str = ''.join(input)
+        is_list = True
+    elif type(input) == str: 
+        input_str = input
+    else: 
+        print('aborting. input must be a string or list of strings')
+        return 
+
+    # regex explanation
+    # - match must fit the pattern `[]()`
+    # - group 1: the text between `[` and `](` that does not contain another 
+    #   `[` (so that it does not match `[[wikilinks]]`)
+    # - group 2: the text between `](` and `)` that does not contain `://`, 
+    #   which is an external link (e.g. https://, obsidian://)
+    link_pattern = re.compile(r"\[((?:(?!\[).)*?)\]\(((?:(?!://).)*?)\)", 
+                              flags=re.DOTALL)
+    while link_pattern.search(input_str) != None: 
+        link_match = link_pattern.search(input_str)
+        if link_match:
+            link_title = link_match.group(1).strip() # [link title]
+            link = link_match.group(2).strip() # (link)
+
+            wikilink_template = '[[{}]]'
+            wikilink = link_title
+            if link != '': 
+                
+                if link_title == '':
+                    wikilink = wikilink_template.format(link)
+                
+                else:
+                    lnk = '{}|{}'.format(link, link_title)
+                    wikilink = wikilink_template.format(lnk)
+
+            input_str = (input_str[:link_match.start(0)] + wikilink 
+                         + input_str[link_match.end(0):])
+    
+    if is_list: 
+        result = input_str.splitlines()
+    else: 
+        result = input_str
+    
+    return result
